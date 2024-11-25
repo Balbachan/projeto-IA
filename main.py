@@ -45,7 +45,20 @@ def fetch_data(endpoint, access_token, client_id, query):
     response.raise_for_status()
     return response.json()
 
-# Função para buscar genres
+# Função para buscar a popularidade dos jogos
+def get_popularity_info(game_ids, access_token):
+    if not game_ids:
+        return {}
+    
+    ids_query = ", ".join(map(str, game_ids))
+    query = f"fields game_id, value; where game_id = ({ids_query});"
+    popularity_data = fetch_data("popularity_primitives", access_token, CLIENT_ID, query)
+
+    # Mapeia o valor de popularidade (campo `value`) para cada game_id
+    popularity_map = {item["game_id"]: item.get("value", None) for item in popularity_data}
+    return popularity_map
+
+# Funções auxiliares para buscar informações adicionais
 def get_genres_info(genre_ids, access_token):
     if not genre_ids:
         return "None"
@@ -57,7 +70,6 @@ def get_genres_info(genre_ids, access_token):
     genre_names = [genre.get("name") for genre in genres_data]
     return ", ".join(genre_names) if genre_names else "None"
 
-# Função para buscar game_modes
 def get_game_modes_info(game_mode_ids, access_token):
     if not game_mode_ids:
         return "None"
@@ -69,7 +81,6 @@ def get_game_modes_info(game_mode_ids, access_token):
     game_mode_names = [mode.get("name") for mode in game_modes_data]
     return ", ".join(game_mode_names) if game_mode_names else "None"
 
-# Função para buscar platforms
 def get_platforms_info(platform_ids, access_token):
     if not platform_ids:
         return "None"
@@ -81,7 +92,6 @@ def get_platforms_info(platform_ids, access_token):
     platform_categories = [map_platform_category(platform.get("category")) for platform in platforms_data]
     return ", ".join(platform_categories) if platform_categories else "None"
 
-# Função para buscar player perspectives
 def get_player_perspectives_info(perspective_ids, access_token):
     if not perspective_ids:
         return "None"
@@ -93,7 +103,6 @@ def get_player_perspectives_info(perspective_ids, access_token):
     perspective_names = [perspective.get("name") for perspective in perspectives_data]
     return ", ".join(perspective_names) if perspective_names else "None"
 
-# Função para buscar themes
 def get_themes_info(theme_ids, access_token):
     if not theme_ids:
         return "None"
@@ -105,7 +114,6 @@ def get_themes_info(theme_ids, access_token):
     theme_names = [theme.get("name") for theme in themes_data]
     return ", ".join(theme_names) if theme_names else "None"
 
-# Função para buscar release dates
 def get_release_date(release_date_ids, access_token):
     if not release_date_ids:
         return "None"
@@ -115,7 +123,7 @@ def get_release_date(release_date_ids, access_token):
     release_dates_data = fetch_data("release_dates", access_token, CLIENT_ID, query)
 
     if release_dates_data:
-        return release_dates_data[0].get("human", "None")  # Retorna o campo "human" do primeiro lançamento
+        return release_dates_data[0].get("human", "None")
     return "None"
 
 # Função para processar e salvar dados no Excel
@@ -133,35 +141,43 @@ def save_to_excel(workbook, data, sheet_name, headers):
 
 # Função principal
 def main():
-    # Autentica e obtém o token de acesso
     access_token = get_access_token(CLIENT_ID, CLIENT_SECRET)
 
     # Configuração dos campos
     games_fields = "id,name,total_rating,total_rating_count,category,genres,game_modes,platforms,player_perspectives,themes,release_dates"
 
-    # Definir a quantidade de jogos com base na variável global
     total_games = NUM_JOGOS
     limit = 100
     offset = 0
+    selected_games = 0
 
-    # Criar workbook para salvar resultados
     workbook = openpyxl.Workbook()
 
     # Cabeçalhos para o Excel
     headers = [
-        "id", "name", "total_rating", "total_rating_count", "category", "genres", "game_modes", "platforms", "player_perspectives", "themes", "release_date"
+        "id", "name", "total_rating", "total_rating_count", "category", "genres", 
+        "game_modes", "platforms", "player_perspectives", "themes", "release_date", "popularity"
     ]
 
     all_rows = []
 
-    # Paginação para coletar todos os jogos
-    while total_games > 0:
-        batch_size = min(total_games, limit)
-        print(f"Buscando {batch_size} jogos...")
-        games_data = fetch_data("games", access_token, CLIENT_ID, f"fields {games_fields}; limit {batch_size}; offset {offset};")
+    # Loop até atingir o número de jogos necessário
+    while selected_games < NUM_JOGOS:
+        print(f"Buscando mais jogos (offset: {offset}, selecionados: {selected_games}/{NUM_JOGOS})...")
+        games_data = fetch_data("games", access_token, CLIENT_ID, f"fields {games_fields}; limit {limit}; offset {offset};")
 
-        # Processar cada jogo para buscar informações adicionais
+        # Buscar IDs dos jogos
+        game_ids = [game["id"] for game in games_data]
+        popularity_map = get_popularity_info(game_ids, access_token)
+
         for game in games_data:
+            popularity = popularity_map.get(game["id"], None)
+
+            # Ignorar jogos sem popularidade
+            if popularity is None:
+                continue
+
+            # Processar jogo
             genres = get_genres_info(game.get("genres", []), access_token)
             game_modes = get_game_modes_info(game.get("game_modes", []), access_token)
             platforms = get_platforms_info(game.get("platforms", []), access_token)
@@ -180,15 +196,19 @@ def main():
                 platforms,
                 player_perspectives,
                 themes,
-                release_date
+                release_date,
+                popularity
             ]
             all_rows.append(row)
+            selected_games += 1
 
-        save_to_excel(workbook, all_rows, "games", headers)
-        all_rows.clear()
+            # Verificar se já atingiu o número necessário
+            if selected_games >= NUM_JOGOS:
+                break
 
-        offset += batch_size
-        total_games -= batch_size
+        offset += limit
+
+    save_to_excel(workbook, all_rows, "games", headers)
 
     filename = "games_data.xlsx"
     workbook.save(filename)
