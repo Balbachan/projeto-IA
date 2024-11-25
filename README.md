@@ -40,8 +40,5 @@ A indústria de jogos é uma das mais lucrativas no setor de entretenimento. O u
 
 ---
 
-## Resultados Esperados
+## Resultados
 
-- Identificação dos principais fatores que influenciam a popularidade de um jogo.
-- Desenvolvimento de um modelo preditivo robusto.
-- Geração de insights acionáveis para o mercado de jogos.
