@@ -2,7 +2,7 @@ import requests
 import openpyxl
 
 # Configuração global
-NUM_JOGOS = 10 
+NUM_JOGOS = 500 
 
 # Client ID e Client Secret
 CLIENT_ID = "urvgaeli6cz3qb7r2fodjd35kqxo9y"
@@ -147,8 +147,8 @@ def main():
     games_fields = "id,name,total_rating,total_rating_count,category,genres,game_modes,platforms,player_perspectives,themes,release_dates"
 
     total_games = NUM_JOGOS
-    limit = 100
-    offset = 0
+    limit = 500
+    offset = 6500
     selected_games = 0
 
     workbook = openpyxl.Workbook()

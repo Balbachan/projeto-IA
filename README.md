@@ -41,4 +41,14 @@ A indústria de jogos é uma das mais lucrativas no setor de entretenimento. O u
 ---
 
 ## Resultados
+Inicialmente, foi utilizado um dataset contendo 500 jogos, mas os resultados dos modelos de previsão de popularidade, como Regressão Linear, Árvore de Decisão e Random Forest, não apresentaram um desempenho satisfatório (com R² abaixo de 0.4 e RMSE elevados), o que indicou que a amostra de dados precisava ser ampliada para obter insights mais precisos. Com o aumento do dataset para 1000 jogos, combinando dois arquivos _.xlsx_ cujos dados foram extraídos da API do IGDB, houve uma melhora significativa nos resultados, sendo o modelo Random Forest o mais eficiente, com o melhor R² (0.8394) e o menor RMSE. 
+
+![alt text](image-1.png)
+
+A análise das importâncias das variáveis no modelo Random Forest revelou os atributos que mais influenciam a popularidade dos jogos, fornecendo informações valiosas sobre os fatores determinantes desse fenômeno. Esses resultados evidenciam que a quantidade e a qualidade dos dados são fundamentais para aprimorar a precisão dos modelos preditivos, além de destacar a importância da análise das variáveis para interpretar os resultados dos modelos.
+
+Com essa pesquisa, chegamos a conclusão que, com os dados selecionados para a atividade, é possível entender que as variáveis que mais se relacionam com a popularidade de um jogo são:
+
+![alt text](image.png)
+
 
